@@ -1,3 +1,4 @@
+from typing import Self
 import pygame as pg
 import os
 import random
@@ -15,7 +16,6 @@ COORDS_Y = [0, 139, 186, 233, 280, 327, 374, 421, 468]
 
 HEIGHT_FROM_BORDER, WIDTH_FROM_BORDER = 25, 15
 
-
 ENEMIES = []
 
 # A function to quickly get a file:
@@ -32,23 +32,42 @@ INF1 = pg.transform.scale(getFile('Inf1.png'), (40, 40))
 #     return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - asset.get_width()/2 + COORDS_X[loc_x] , 
 #                 WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - asset.get_height()/2 + COORDS_Y[loc_y] )
 
-def Get_Screen_Grid(loc_x, loc_y, rect):
-    return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - rect.width/2 + COORDS_X[loc_x] , 
-                WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - rect.height/2 + COORDS_Y[loc_y] )
+class Infantry(pg.sprite.Sprite):
+    def __init__(self, image, position = (0, 0) ):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        x, y = position
+        self.rect.x, self.rect.y = x, y
+        self.rect.topleft = (x, y)
+        
+    def set_pos(self, new_position):
+        self.rect.x, self.rect.y = new_position
+
+
+def Get_Screen_Grid(loc_x, loc_y, obj):
+    return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - obj.rect.width/2 + COORDS_X[loc_x] , 
+                WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - obj.rect.height/2 + COORDS_Y[loc_y] )
 
 def Check_Screen_Grid_Loc_X(asset):
     for loc_x in range(1, len(COORDS_X)):
+        
         grid_coords = []
         get_touple = Get_Screen_Grid(loc_x, 0, asset)
         grid_coords += get_touple 
-        print('checking and :' + str(loc_x))
-        if(asset.x == grid_coords[0]):
-            print("shit works" + str(loc_x))
+        
+        print(f'Asset: {asset.rect.x}, grid_coords {grid_coords[0]}')
+        
+        if(asset.rect.x == grid_coords[0]):
+            print(f'position is {loc_x}')
 
 def Enemy_Controller(enemy_count):
     if(enemy_count < 5):
-        enemy = INF1.get_rect()
-        # WIN.blit(INF1, Get_Screen_Grid(10, random.randrange(1,9), INF1) )
+        enemy = Infantry(INF1)
+        enemy.set_pos(Get_Screen_Grid(3,2, enemy))
+        
         enemy_count += 1
         Check_Screen_Grid_Loc_X(enemy)
     
@@ -61,10 +80,6 @@ def Render_Window(screen_State, number_of_enemies):
         WIN.blit(SCREEN_OFF, (WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER, WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER))
     else:
         WIN.blit(SCREEN_ON, (WIN_WIDTH - SCREEN_ON.get_width() - WIDTH_FROM_BORDER, WIN_HEIGHT - SCREEN_ON.get_height() - HEIGHT_FROM_BORDER))
-        # WIN.blit(INF1, Get_Screen_Grid(1, 4, INF1))
-        # WIN.blit(INF1, Get_Screen_Grid(3, 4, INF1))
-        # WIN.blit(INF1, Get_Screen_Grid(3, 6, INF1))
-        # WIN.blit(INF1, Get_Screen_Grid(5, 4, INF1))
 
         Enemy_Controller(number_of_enemies)
     
