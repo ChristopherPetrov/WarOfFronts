@@ -17,6 +17,7 @@ COORDS_Y = [0, 139, 186, 233, 280, 327, 374, 421, 468]
 HEIGHT_FROM_BORDER, WIDTH_FROM_BORDER = 25, 15
 
 ENEMIES = []
+ENEMIES_COUNT = 0
 
 # A function to quickly get a file:
 def getFile(fileName):
@@ -31,6 +32,9 @@ INF1 = pg.transform.scale(getFile('Inf1.png'), (40, 40))
 # def Get_Screen_Grid(loc_x, loc_y, asset):
 #     return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - asset.get_width()/2 + COORDS_X[loc_x] , 
 #                 WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - asset.get_height()/2 + COORDS_Y[loc_y] )
+def Get_Screen_Grid(loc_x, loc_y, obj):
+    return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - obj.rect.width/2 + COORDS_X[loc_x] , 
+                WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - obj.rect.height/2 + COORDS_Y[loc_y] )
 
 class Infantry(pg.sprite.Sprite):
     def __init__(self, image, position = (0, 0) ):
@@ -39,55 +43,94 @@ class Infantry(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.width = self.image.get_width()
         self.height = self.image.get_height()
+        
         x, y = position
-        self.rect.x, self.rect.y = x, y
-        self.rect.topleft = (x, y)
         
-    def set_pos(self, new_position):
-        self.rect.x, self.rect.y = new_position
+        self.grid_x = x
+        self.grid_y = y
+
+        self.grid_positions = Get_Screen_Grid(x, y, self )
+        self.rect.x = self.grid_positions[0]
+        self.rect.y = self.grid_positions[1]
 
 
-def Get_Screen_Grid(loc_x, loc_y, obj):
-    return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - obj.rect.width/2 + COORDS_X[loc_x] , 
-                WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - obj.rect.height/2 + COORDS_Y[loc_y] )
+    def set_pos(self, new_grid_position): # Input will be (grid_x, grid_y) (FE: 9,1)
+        x, y = new_grid_position
 
-def Check_Screen_Grid_Loc_X(asset):
-    for loc_x in range(1, len(COORDS_X)):
-        
-        grid_coords = []
-        get_touple = Get_Screen_Grid(loc_x, 0, asset)
-        grid_coords += get_touple 
-        
-        print(f'Asset: {asset.rect.x}, grid_coords {grid_coords[0]}')
-        
-        if(asset.rect.x == grid_coords[0]):
-            print(f'position is {loc_x}')
+        self.grid_x, self.grid_y = x, y
 
-def Enemy_Controller(enemy_count):
-    if(enemy_count < 5):
-        enemy = Infantry(INF1)
-        enemy.set_pos(Get_Screen_Grid(3,2, enemy))
+        # print('START OF SET_POS DEBUG:')
+        # print(f'New Grid Coods: x: {x}, y: {y}')
+        self.grid_positions = Get_Screen_Grid(x, y, self )
         
-        enemy_count += 1
-        Check_Screen_Grid_Loc_X(enemy)
+        self.rect_x = int(self.grid_positions[0])
+        self.rect_y = int(self.grid_positions[1])
+
+
+# def Check_Screen_Grid_Loc_X(asset):
+#     for loc_x in range(1, len(COORDS_X)):
+        
+#         grid_coords = []
+#         get_touple = Get_Screen_Grid(loc_x, 0, asset)
+#         grid_coords += get_touple 
+        
+#         #print(f'Asset: {asset.rect.x}, grid_coords {grid_coords[0]}')
+        
+#         if(asset.rect.x == grid_coords[0]):
+#             print(f'Location found: {loc_x}')
+#             return loc_x
+    
+    print('No location found!')
+    return False
+
+def handle_enemy_movement(enemies_list):
+    for obj in enemies_list:
+        global ENEMIES_COUNT
+        #obj_grid_x = Check_Screen_Grid_Loc_X(obj)
+
+        #Future Proof: Exeption Handle for 'Check_Screen_Grid_Loc_X' == 0 
+
+        # Exeption handle: Enemy going out of bounds
+        if(obj.grid_x <= 1):
+            #Temporary Solution which will be migrated to Event
+            print('-1 Health')
+            enemies_list.remove(obj)
+            ENEMIES_COUNT -= 1
+            return
+        
+        # print('START OF HANDLE ENEMY MOVEMENT DEBUG:')
+        # print(f'Obj Grid X: {obj.grid_x}, will be: {obj.grid_x - 1}')    
+        # print(f'Obj Grid Y:{obj.grid_y}')
+        obj.set_pos((obj.grid_x - 1,obj.grid_y))
+
+
+def Enemy_Controller():
+    global ENEMIES_COUNT
+    if(ENEMIES_COUNT < 5):
+        enemy = Infantry(INF1, (10 ,random.randrange(1, 9)))
+        ENEMIES.append(enemy)
+        ENEMIES_COUNT += 1
+        
     
 
-def Render_Window(screen_State, number_of_enemies):
+def Render_Window(Screen_State):
     WIN.blit(BACKGROUND, (0, 0)) # Renders the background
     
     #Handles the render between Truned ON and OFF screen
-    if screen_State is False :
+    if Screen_State is False :
         WIN.blit(SCREEN_OFF, (WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER, WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER))
     else:
         WIN.blit(SCREEN_ON, (WIN_WIDTH - SCREEN_ON.get_width() - WIDTH_FROM_BORDER, WIN_HEIGHT - SCREEN_ON.get_height() - HEIGHT_FROM_BORDER))
+        handle_enemy_movement(ENEMIES)
+        Enemy_Controller()
+        
+        for enemy in ENEMIES:
+            WIN.blit(enemy.image, enemy.grid_positions)
 
-        Enemy_Controller(number_of_enemies)
     
 
 def Main():
     IS_SCREEN_ON = False
-    number_of_enemies = 0
-
     clock = pg.time.Clock()
     
     run = True
@@ -115,9 +158,10 @@ def Main():
         if keys_pressed[pg.K_a]:
             print('K')
 
-        Render_Window(IS_SCREEN_ON, number_of_enemies)
+        Render_Window(IS_SCREEN_ON)
         
         pg.display.update()
+        pg.time.delay(3000)
         
 
     pg.quit()
