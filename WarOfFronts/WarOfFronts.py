@@ -28,10 +28,6 @@ BACKGROUND = getFile('BG-1600.png')
 SCREEN_ON, SCREEN_OFF = getFile('ScreenOn.png'), getFile('ScreenOff.png')
 INF1 = pg.transform.scale(getFile('Inf1.png'), (40, 40))
 
-
-# def Get_Screen_Grid(loc_x, loc_y, asset):
-#     return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - asset.get_width()/2 + COORDS_X[loc_x] , 
-#                 WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - asset.get_height()/2 + COORDS_Y[loc_y] )
 def Get_Screen_Grid(loc_x, loc_y, obj):
     return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - obj.rect.width/2 + COORDS_X[loc_x] , 
                 WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - obj.rect.height/2 + COORDS_Y[loc_y] )
@@ -45,7 +41,6 @@ class Infantry(pg.sprite.Sprite):
         self.height = self.image.get_height()
         
         x, y = position
-        
         self.grid_x = x
         self.grid_y = y
 
@@ -56,39 +51,16 @@ class Infantry(pg.sprite.Sprite):
 
     def set_pos(self, new_grid_position): # Input will be (grid_x, grid_y) (FE: 9,1)
         x, y = new_grid_position
-
         self.grid_x, self.grid_y = x, y
-
-        # print('START OF SET_POS DEBUG:')
-        # print(f'New Grid Coods: x: {x}, y: {y}')
-        self.grid_positions = Get_Screen_Grid(x, y, self )
         
+        self.grid_positions = Get_Screen_Grid(x, y, self )
         self.rect_x = int(self.grid_positions[0])
         self.rect_y = int(self.grid_positions[1])
 
 
-# def Check_Screen_Grid_Loc_X(asset):
-#     for loc_x in range(1, len(COORDS_X)):
-        
-#         grid_coords = []
-#         get_touple = Get_Screen_Grid(loc_x, 0, asset)
-#         grid_coords += get_touple 
-        
-#         #print(f'Asset: {asset.rect.x}, grid_coords {grid_coords[0]}')
-        
-#         if(asset.rect.x == grid_coords[0]):
-#             print(f'Location found: {loc_x}')
-#             return loc_x
-    
-    print('No location found!')
-    return False
-
 def handle_enemy_movement(enemies_list):
     for obj in enemies_list:
         global ENEMIES_COUNT
-        #obj_grid_x = Check_Screen_Grid_Loc_X(obj)
-
-        #Future Proof: Exeption Handle for 'Check_Screen_Grid_Loc_X' == 0 
 
         # Exeption handle: Enemy going out of bounds
         if(obj.grid_x <= 1):
@@ -98,9 +70,6 @@ def handle_enemy_movement(enemies_list):
             ENEMIES_COUNT -= 1
             return
         
-        # print('START OF HANDLE ENEMY MOVEMENT DEBUG:')
-        # print(f'Obj Grid X: {obj.grid_x}, will be: {obj.grid_x - 1}')    
-        # print(f'Obj Grid Y:{obj.grid_y}')
         obj.set_pos((obj.grid_x - 1,obj.grid_y))
 
 
