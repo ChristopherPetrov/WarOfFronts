@@ -88,11 +88,12 @@ def drop_bomb(location, enemies_list):
 
     bomb = Bomb(BOMB, EXPLO, location)
     
-    if BOMB_STATE <= len(BOMB) and BOMB_STATE is not 0:
-        print(f'Printing Bomb: {BOMB_STATE}')
+    if BOMB_STATE <= len(BOMB) and BOMB_STATE != 0:
+        #print(f'Printing Bomb: {BOMB_STATE}')
         WIN.blit(BOMB[BOMB_STATE-1], bomb.impact_coords)
 
-    if IS_BOMB_DROPPED is False:
+    if IS_BOMB_DROPPED is False :
+        print('Sending Bomb Drop Eevent')
         IS_BOMB_DROPPED = not IS_BOMB_DROPPED
         pg.time.set_timer(bomb_drop_event, 50)
 
@@ -200,13 +201,19 @@ def Main():
 
             if event.type == bomb_drop_event:
                 BOMB_STATE += 1
-                if BOMB_STATE <= len(BOMB) + 1:
-                    pg.time.set_timer(bomb_drop_event, 1000)
-                    if BOMB_STATE + 1 > len(BOMB) + 1:
-                        BOMB_STATE = 0
-                        IS_BOMB_DROPPED = False
-                        IS_BOMB_EXPLODING = True  
-                        pg.time.set_timer(bomb_exploding_event, 3000)
+                print(f'{BOMB_STATE}')
+                if BOMB_STATE > len(BOMB):
+                    print(f'{BOMB_STATE} > {len(BOMB)} ( stopping )')    
+                    BOMB_STATE = 0
+                    IS_BOMB_DROPPED = False
+                    IS_BOMB_EXPLODING = True  
+                    pg.time.set_timer(bomb_exploding_event, 3000)
+                    
+                elif BOMB_STATE < len(BOMB) and IS_BOMB_DROPPED is True:
+                    if BOMB_STATE <= len(BOMB):
+                        print(f'{BOMB_STATE} <= {len(BOMB) + 1}, {IS_BOMB_DROPPED} (recursing)')
+                        pg.time.set_timer(bomb_drop_event, 1000)
+                    
             
             if event.type == bomb_exploding_event:
                 
