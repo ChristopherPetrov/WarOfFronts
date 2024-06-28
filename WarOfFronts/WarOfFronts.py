@@ -1,4 +1,3 @@
-from typing import Self
 import pygame as pg
 import os
 import random
@@ -64,6 +63,8 @@ EXPLO = pg.transform.scale(getFile('Explosion.png'), (40, 40))
 BOMB = [pg.transform.scale(getFile('Bomb1.png'), (40, 40)), pg.transform.scale(getFile('Bomb1.png'), (30, 30)), pg.transform.scale(getFile('Bomb1.png'), (20, 20))]
 
 def Get_Screen_Grid(loc_x, loc_y, obj):
+    print(f'x: {len(COORDS_X)} and y: {len(COORDS_Y)}')
+    print(f'LocY: {loc_y} and obj:"{obj}')
     return ( WIN_WIDTH - SCREEN_OFF.get_width() - WIDTH_FROM_BORDER - obj.rect.width/2 + COORDS_X[loc_x] , 
                 WIN_HEIGHT - SCREEN_OFF.get_height() - HEIGHT_FROM_BORDER - obj.rect.height/2 + COORDS_Y[loc_y] )
 
@@ -100,12 +101,26 @@ class Bomb(pg.sprite.Sprite):
         self.bomb_images = bomb_images
         self.explosion_image = explosion_image
         self.rect = explosion_image.get_rect()
-
+        
         x, y = impact_locations
         self.impact_grid = (x, y)
         self.impact_coords = Get_Screen_Grid(x, y, self)
         self.impact_splash_grid = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-        self.impact_splash_coords = [self.impact_coords ,Get_Screen_Grid(x + 1, y, self), Get_Screen_Grid(x - 1, y, self), Get_Screen_Grid(x, y + 1, self), Get_Screen_Grid(x, y - 1, self)]
+        
+        self.impact_splash_coords = [self.impact_coords, -1, -1, -1, -1]
+        if x + 1 <= (len(COORDS_X) - 1):
+            self.impact_splash_coords[1] = Get_Screen_Grid(x + 1, y, self)
+            
+        if x - 1 > 0:
+            self.impact_splash_coords[2] = Get_Screen_Grid(x - 1, y, self)
+            
+        if y + 1 <= (len(COORDS_Y) - 1):
+            self.impact_splash_coords[3] = Get_Screen_Grid(x, y + 1, self)
+            
+        if y - 1 > 0:
+            self.impact_splash_coords[4] = Get_Screen_Grid(x, y - 1, self)
+
+         #Get_Screen_Grid(x + 1, y, self), Get_Screen_Grid(x - 1, y, self), Get_Screen_Grid(x, y + 1, self), Get_Screen_Grid(x, y - 1, self)]
         
 def drop_bomb(location, enemies_list):
     global ENEMIES_COUNT
@@ -123,12 +138,13 @@ def drop_bomb(location, enemies_list):
     elif IS_BOMB_EXPLODING is True:
         #print('Printing Explosion')
         for splash_loc in bomb.impact_splash_coords:
-             WIN.blit(bomb.explosion_image,splash_loc)
-             for enemy in enemies_list:
-                if(enemy.grid_positions == splash_loc):
-                    print('Enemy Bombarded')
-                    enemies_list.remove(enemy)
-                    ENEMIES_COUNT -= 1
+             if splash_loc != -1:
+                 WIN.blit(bomb.explosion_image,splash_loc)
+                 for enemy in enemies_list:
+                    if(enemy.grid_positions == splash_loc):
+                        print('Enemy Bombarded')
+                        enemies_list.remove(enemy)
+                        ENEMIES_COUNT -= 1
     
 
 def handle_enemy_movement(enemies_list):
@@ -155,8 +171,7 @@ def Enemy_Controller():
     if(ENEMIES_COUNT < 5):
         ENEMIES_COUNT += 1
         pg.time.set_timer(add_enemy_event, 3000)
-        
-    
+
 
 def Render_Window(Screen_State):
     global ENEMIES
@@ -167,6 +182,7 @@ def Render_Window(Screen_State):
     global text
     global HEALTH
     
+
     WIN.blit(BACKGROUND, (0, 0)) # Renders the background
     
     #Handles the render between Truned ON and OFF screen
@@ -186,7 +202,7 @@ def Render_Window(Screen_State):
             
         if CNUM_1 != -1:
             WIN.blit(NUMS[int(CNUM_1)], Get_CScreen_Grid_Image(1, NUMS[int(CNUM_1)]))
-            if CNUM_2 is not -1:
+            if CNUM_2 != -1:
                 WIN.blit(NUMS[int(CNUM_2)], Get_CScreen_Grid_Image(2, NUMS[int(CNUM_2)]))
 
         if DROP_BOMB is True:
@@ -233,10 +249,9 @@ def Main():
                     IS_SCREEN_ON = not IS_SCREEN_ON
                 if event.key == pg.K_COMMA: # easy to use debug function
                     print('This is debug:')
-                    print(WIN_WIDTH)
-                    print(SCREEN_ON.get_width())
+                    
                     print('Debug End')
-                if event.key == pg.K_SPACE and CNUM_1 is not -1 and CNUM_2 is not -1:
+                if event.key == pg.K_SPACE and CNUM_1 != -1 and CNUM_2 != -1:
                     print(f'Space Clicked, {IS_SPACE_ACTIVE}')
                     if IS_SPACE_ACTIVE is False and DROP_BOMB is False:
                         print(f'Space Clicked, {IS_SPACE_ACTIVE}')
@@ -244,7 +259,7 @@ def Main():
                         print(f'Space Clicked, {IS_SPACE_ACTIVE}')
                         print(f'Space has been clicked! Space is Active!')
                         pg.time.set_timer(bomb_drop_event, 50, loops=1)
-                if event.key == pg.K_b:
+                if event.key == pg.K_b and DROP_BOMB is False:
                     NUM_SELECT = True
                     CNUM_1, CNUM_2 = -1, -1
                     
